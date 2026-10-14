@@ -1,0 +1,35 @@
+<a class="sr-only" href="#main">Zum Inhalt</a>
+<header class="band">
+  <div class="band-inner">
+    <span class="brand">
+      <a class="who" href="https://umut-aslan.dev">Umut Aslan</a><span class="sep">/</span><a class="what" routerLink="/">Lager-Scan</a>
+    </span>
+    <nav class="nav" aria-label="Bereiche">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Leitstand</a>
+      <a routerLink="/scan" routerLinkActive="active">Scanner</a>
+      <a routerLink="/etiketten" routerLinkActive="active">Etiketten</a>
+    </nav>
+    <div class="tools">
+      <span class="netpill" [class.off]="!outbox.online()" data-testid="netpill" [attr.data-pending]="outbox.pending()">
+        {{ outbox.online() ? 'Online' : 'Offline' }}@if (outbox.pending()) { · {{ outbox.pending() }} wartend }
+      </span>
+      <button class="tool" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Helles Design' : 'Dunkles Design'">{{ theme() === 'dark' ? '☀' : '☾' }}</button>
+    </div>
+  </div>
+  <div class="bar" aria-hidden="true"></div>
+</header>
+
+<main class="page" id="main">
+  <p class="workspace-note no-print" role="note">
+    <span><strong>Ihr persönliches Demo-Lager.</strong> Laptop und verbundenes Handy teilen es; andere Besucher sehen nichts davon.
+      Wird nach 24 Stunden ohne Nutzung gelöscht. Alle Artikel sind frei erfunden.</span>
+  </p>
+  <router-outlet />
+</main>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <span>Ein Demo-Projekt von <a href="https://umut-aslan.dev">Umut Aslan</a> · Angular · Java Spring Boot · PostgreSQL</span>
+    <span><a href="https://umut-aslan.dev/impressum/">Impressum</a> · <a href="https://umut-aslan.dev/datenschutz/">Datenschutz</a></span>
+  </div>
+</footer>

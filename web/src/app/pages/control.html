@@ -1,0 +1,97 @@
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Leitstand</p>
+    <h1>Lager live</h1>
+    <p class="muted">Scannen am Handy, sehen am Leitstand: jede Buchung erscheint hier sofort. Statt PC auf dem Rollwagen reicht das Smartphone.</p>
+  </div>
+  <span class="live-dot" [class.on]="live.connected()" data-testid="live">{{ live.connected() ? 'Live verbunden' : 'Verbinde …' }}</span>
+</div>
+
+<div class="grid-main">
+  <div class="stack">
+    <section class="card pair" aria-labelledby="pair-title">
+      @if (qr()) { <img [src]="qr()" alt="QR-Code zum Verbinden des Handys" data-testid="pair-qr" /> }
+      <div>
+        <strong id="pair-title">Handy als Scanner verbinden</strong>
+        <p>QR-Code mit der Handykamera scannen – das Handy öffnet den Scanner in <em>diesem</em> Lager. Dann die Etiketten
+          unter <a routerLink="/etiketten">Etiketten</a> (auf diesem Bildschirm oder ausgedruckt) scannen und buchen.</p>
+        <p class="mono" style="font-size:.72rem;margin-top:8px;word-break:break-all">{{ joinUrl() }}</p>
+      </div>
+    </section>
+
+    @if (dash(); as d) {
+      <div class="tiles four">
+        <div class="card tile"><span class="label">Buchungen heute</span><span class="value">{{ d.bookingsToday }}</span>
+          <span class="sub">{{ d.receiptsToday }} Eingang · {{ d.issuesToday }} Entnahme · {{ d.transfersToday }} Umlagerung</span></div>
+        <div class="card tile"><span class="label">Inventuren heute</span><span class="value">{{ d.countsToday }}</span>
+          <span class="sub">{{ d.countDifferencesToday }} mit Differenz</span></div>
+        <div class="card tile"><span class="label">Unter Mindestbestand</span>
+          <span class="value" [class.critical]="d.belowMin.length > 0">{{ d.belowMin.length }}</span><span class="sub">von {{ d.articles }} Artikeln</span></div>
+        <div class="card tile"><span class="label">Im Wareneingang</span><span class="value">{{ d.receiving.length }}</span>
+          <span class="sub">Positionen warten auf Einlagerung</span></div>
+      </div>
+
+      <div class="grid-2">
+        <section class="card panel">
+          <h3>Wareneingang – einlagern</h3>
+          <ul class="list">
+            @for (s of d.receiving; track s.articleNumber + s.binCode) {
+              <li><span class="mono">{{ s.binCode }}</span><span class="grow">{{ s.articleName }}<small class="mono">{{ s.articleNumber }}</small></span><b class="num">{{ qty(s.quantity) }} {{ s.unit }}</b></li>
+            } @empty { <li class="muted">Alles eingelagert.</li> }
+          </ul>
+        </section>
+        <section class="card panel">
+          <h3>Unter Mindestbestand</h3>
+          <ul class="list">
+            @for (a of d.belowMin; track a.number) {
+              <li><span class="grow"><a [routerLink]="['/artikel', a.number]">{{ a.name }}</a><small class="mono">{{ a.number }}</small></span>
+                <b class="num critical">{{ qty(a.total) }} / {{ qty(a.minStock) }} {{ a.unit }}</b></li>
+            } @empty { <li class="muted">Kein Artikel unter Mindestbestand.</li> }
+          </ul>
+        </section>
+      </div>
+    }
+
+    <section>
+      <div class="toolbar" style="margin-top:6px">
+        <h2 class="section" style="margin:0">Bestand</h2>
+        <span class="grow"></span>
+        <input class="input" type="search" placeholder="Artikel, EAN oder Gruppe …" aria-label="Artikel suchen" [value]="query()" (input)="search(val($event))" />
+      </div>
+      <div class="card table-wrap">
+        <table class="data" data-testid="stock-table">
+          <thead><tr><th>Artikel</th><th>Gruppe</th><th>Lagerplätze</th><th class="right">Bestand</th><th class="right">Min.</th></tr></thead>
+          <tbody>
+            @for (a of articles(); track a.number) {
+              <tr>
+                <td><a [routerLink]="['/artikel', a.number]" class="mono">{{ a.number }}</a> {{ a.name }}</td>
+                <td class="muted">{{ a.group }}</td>
+                <td class="mono">{{ a.bins.join(', ') || '–' }}</td>
+                <td class="right num" [class.critical]="a.belowMin">{{ a.belowMin ? '⚠ ' : '' }}{{ qty(a.total) }} {{ a.unit }}</td>
+                <td class="right num muted">{{ qty(a.minStock) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <aside class="card panel" aria-labelledby="feed-title">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 id="feed-title" style="margin:0">Buchungen</h3>
+      @if (dash(); as d) { <span class="chip">{{ d.connectedDevices }} Gerät(e) verbunden</span> }
+    </div>
+    <ul class="list feed" data-testid="feed" style="margin-top:8px">
+      @for (b of dash()?.recent ?? []; track b.id) {
+        <li [class.fresh]="b.id === fresh()">
+          <span class="type" [attr.data-t]="b.type">{{ b.typeLabel }}</span>
+          <span class="grow">{{ b.articleName }}
+            <small>{{ time(b.bookedAt) }} · {{ b.device }} · <span class="mono">{{ b.fromBin ?? '' }}{{ b.fromBin && b.toBin ? ' → ' : '' }}{{ b.toBin ?? '' }}</span></small></span>
+          <b class="num">{{ b.type === 'COUNT' ? signed(b.difference) : qty(b.quantity) }}</b>
+        </li>
+      }
+    </ul>
+    <button class="btn btn-sm btn-ghost" type="button" (click)="reset()" style="margin-top:12px">Demo zurücksetzen</button>
+  </aside>
+</div>

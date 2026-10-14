@@ -1,0 +1,16 @@
+{
+  "name": "Lager-Scan – Umut Aslan",
+  "short_name": "Lager-Scan",
+  "description": "Smartphone als Barcode-Scanner fürs Lager – offline-fähig, live am Leitstand.",
+  "lang": "de",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/scan",
+  "theme_color": "#111214",
+  "background_color": "#0b0b0c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

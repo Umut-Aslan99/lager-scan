@@ -1,0 +1,148 @@
+<div class="scanner">
+  @if (joined() === '1') {
+    <p class="alert alert-ok" role="status">✓ Mit dem Leitstand verbunden – Ihre Buchungen erscheinen dort sofort.</p>
+  } @else if (joined() === 'expired') {
+    <p class="alert alert-error" role="alert">Der Verbindungscode ist abgelaufen. Bitte den QR-Code am Leitstand neu scannen.</p>
+  }
+
+  <app-camera-scanner (scanned)="lookup($event)" />
+
+  <form class="manual" (submit)="$event.preventDefault(); lookup(code())">
+    <input class="input" [value]="code()" (input)="code.set(val($event))" placeholder="Code eingeben oder Handscanner nutzen"
+      aria-label="Code eingeben" autocomplete="off" autocapitalize="characters" data-testid="code-input" />
+    <button class="btn btn-primary" type="submit" [disabled]="busy()">Suchen</button>
+  </form>
+
+  @for (r of outbox.rejected(); track r.request.clientId) {
+    <p class="alert alert-error" role="alert">
+      <strong>Nicht gebucht:</strong> {{ labels[r.request.type] }} {{ r.request.articleNumber }} – {{ r.message }}
+      <button class="btn btn-sm btn-ghost" type="button" (click)="outbox.dismiss(r.request.clientId)">OK</button>
+    </p>
+  }
+
+  @if (result(); as r) {
+    @if (r.offline) {
+      <p class="alert alert-error" role="status">Offline – Bestand aus dem letzten Abgleich, kann veraltet sein. Buchungen werden gespeichert und später gesendet.</p>
+    }
+
+    @if (r.kind === 'bin' && r.bin; as bin) {
+      <section class="card result" data-testid="bin-result">
+        <header>
+          <div><span class="label">Lagerplatz · {{ bin.zone }}</span><h2 class="mono">{{ bin.code }}</h2></div>
+        </header>
+        @if (bin.contents.length === 0) { <p class="muted">Leer.</p> }
+        <ul class="list">
+          @for (s of bin.contents; track s.articleNumber) {
+            <li>
+              <span class="grow"><span class="mono">{{ s.articleNumber }}</span> {{ s.articleName }}</span>
+              <b class="num">{{ qty(s.quantity) }} {{ s.unit }}</b>
+              <button class="btn btn-sm" type="button" (click)="openArticle(s.articleNumber, bin.code)">Öffnen</button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (article(); as a) {
+      <section class="card result" data-testid="article-result">
+        <header>
+          @if (a.article.photoUrl) { <img [src]="a.article.photoUrl" alt="Foto {{ a.article.name }}" /> }
+          <div>
+            <span class="label">{{ a.article.group }} · EAN {{ a.article.ean }}</span>
+            <h2>{{ a.article.name }}</h2>
+            <span class="mono muted">{{ a.article.number }}</span>
+          </div>
+        </header>
+        <div>
+          <span class="label">Bestand gesamt</span>
+          <p style="font: 600 1.5rem var(--font-display)">{{ qty(a.article.total) }} {{ a.article.unit }}
+            @if (a.article.belowMin) { <span class="chip chip-critical">⚠ unter Mindestbestand {{ qty(a.article.minStock) }}</span> }
+          </p>
+        </div>
+        <ul class="list" data-testid="stock-lines">
+          @for (s of a.stock; track s.binCode) {
+            <li><span class="mono grow">{{ s.binCode }}</span><b class="num">{{ qty(s.quantity) }} {{ s.unit }}</b></li>
+          }
+        </ul>
+
+        @if (!mode()) {
+          <div class="actions-grid">
+            <button class="btn btn-lg" type="button" (click)="choose('RECEIPT')">Wareneingang</button>
+            <button class="btn btn-lg" type="button" (click)="choose('ISSUE')">Entnahme</button>
+            <button class="btn btn-lg" type="button" (click)="choose('TRANSFER')">Umlagern</button>
+            <button class="btn btn-lg" type="button" (click)="choose('COUNT')">Inventur</button>
+            <button class="btn btn-lg" type="button" (click)="choose('PHOTO')" style="grid-column: 1 / -1">📷 Foto aufnehmen</button>
+          </div>
+        }
+      </section>
+
+      @if (mode(); as m) {
+        <form class="card form" (submit)="$event.preventDefault(); book()" data-testid="booking-form">
+          <h2 style="font-size:1.1rem">{{ m === 'PHOTO' ? 'Foto aufnehmen' : labels[m] }}</h2>
+          @if (m === 'PHOTO') {
+            <label class="btn btn-primary btn-lg btn-block" style="color:var(--accent-ink)">
+              Kamera öffnen
+              <input type="file" accept="image/*" capture="environment" class="sr-only" (change)="photo($event)" />
+            </label>
+          } @else {
+            @if (m === 'ISSUE' || m === 'TRANSFER') {
+              <label>Von Lagerplatz (Etikett scannen oder wählen)
+                <select class="select" (change)="fromBin.set(val($event))" data-testid="from-bin">
+                  <option value="">– wählen –</option>
+                  @for (b of bins(); track b.code) { <option [value]="b.code" [selected]="b.code === fromBin()">{{ b.code }} · {{ b.zone }}</option> }
+                </select>
+              </label>
+            }
+            @if (m === 'RECEIPT' || m === 'TRANSFER' || m === 'COUNT') {
+              <label>{{ m === 'COUNT' ? 'Gezählter Lagerplatz' : 'Nach Lagerplatz' }} (Etikett scannen oder wählen)
+                <select class="select" (change)="toBin.set(val($event))" data-testid="to-bin">
+                  <option value="">– wählen –</option>
+                  @for (b of bins(); track b.code) { <option [value]="b.code" [selected]="b.code === toBin()">{{ b.code }} · {{ b.zone }}</option> }
+                </select>
+              </label>
+            }
+            @if (m === 'COUNT') {
+              <label>Gezählte Menge ({{ a.article.unit }})
+                <input class="input" inputmode="decimal" [value]="counted() ?? ''" (input)="counted.set(num($event))" data-testid="counted" />
+              </label>
+            } @else {
+              <label>Menge ({{ a.article.unit }})
+                <span class="stepper">
+                  <button class="btn" type="button" (click)="step(-1)" aria-label="Weniger">−</button>
+                  <input class="input" inputmode="decimal" [value]="quantity()" (input)="quantity.set(num($event) ?? 0)" aria-label="Menge" data-testid="quantity" />
+                  <button class="btn" type="button" (click)="step(1)" aria-label="Mehr">+</button>
+                </span>
+              </label>
+            }
+            <label>Notiz (optional)
+              <input class="input" [value]="note()" (input)="note.set(val($event))" placeholder="z. B. Lieferschein-Nr." />
+            </label>
+            <button class="btn btn-primary btn-lg btn-block" type="submit" [disabled]="busy()" data-testid="book">Buchen</button>
+          }
+          <button class="btn btn-ghost btn-block" type="button" (click)="mode.set(null)">Abbrechen</button>
+        </form>
+      }
+
+      @if (a.recent.length) {
+        <section class="card result">
+          <h3 class="label">Letzte Buchungen</h3>
+          <ul class="list">
+            @for (b of a.recent; track b.id) {
+              <li><span class="type" [attr.data-t]="b.type">{{ b.typeLabel }}</span>
+                <span class="grow">{{ b.fromBin ?? '' }}{{ b.fromBin && b.toBin ? ' → ' : '' }}{{ b.toBin ?? '' }}
+                  <small>{{ time(b.bookedAt) }} · {{ b.device }}</small></span>
+                <b class="num">{{ b.type === 'COUNT' ? signed(b.difference) : qty(b.quantity) }}</b></li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  } @else {
+    <p class="muted" style="text-align:center">Scannen Sie ein Artikel- oder Lagerplatz-Etikett.
+      Etiketten zum Ausprobieren gibt es unter <a routerLink="/etiketten">Etiketten</a> – oder am Bildschirm des Leitstands.</p>
+  }
+</div>
+
+@if (toast(); as t) {
+  <div class="toast" [class.ok]="t.kind === 'ok'" [class.err]="t.kind === 'err'" role="status" data-testid="toast">{{ t.text }}</div>
+}

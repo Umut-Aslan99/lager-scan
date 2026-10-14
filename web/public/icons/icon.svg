@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0b0b0c"/>
+  <!-- scan frame corners (inside the maskable safe zone) -->
+  <g fill="none" stroke="#f4f1ea" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M136 186v-50h50"/><path d="M326 136h50v50"/><path d="M376 326v50h-50"/><path d="M186 376h-50v-50"/>
+  </g>
+  <!-- barcode -->
+  <g fill="#f4f1ea">
+    <rect x="178" y="190" width="12" height="132"/><rect x="200" y="190" width="6" height="132"/><rect x="216" y="190" width="18" height="132"/>
+    <rect x="244" y="190" width="6" height="132"/><rect x="260" y="190" width="12" height="132"/><rect x="282" y="190" width="6" height="132"/>
+    <rect x="298" y="190" width="18" height="132"/><rect x="326" y="190" width="8" height="132"/>
+  </g>
+  <!-- scan line in the portfolio accent -->
+  <rect x="150" y="249" width="212" height="14" rx="7" fill="#e8834a"/>
+</svg>

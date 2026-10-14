@@ -1,0 +1,52 @@
+# Lager-Scan – angular.umut-aslan.dev
+#   Phone / laptop ──▶ Traefik ──▶ app (Spring Boot: API + SSE + Angular build) ──▶ db (PostgreSQL)
+# Only `app` is on the public proxy network; the database is internal.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lagerscan
+      POSTGRES_USER: lagerscan
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes: [db:/var/lib/postgresql/data]
+    networks: [internal]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lagerscan -d lagerscan"]
+      interval: 10s
+      start_period: 10s
+      start_interval: 1s
+
+  app:
+    build: .
+    image: umutaslan/lager-scan:${GIT_SHA:-local}
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/lagerscan
+      DB_USER: lagerscan
+      DB_PASSWORD: ${DB_PASSWORD}
+      PUBLIC_URL: ${PUBLIC_URL:-https://angular.umut-aslan.dev}
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [internal, proxy]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 448m
+    labels:
+      - traefik.enable=${TRAEFIK_ENABLE:-true}
+      - traefik.docker.network=proxy
+      - traefik.http.routers.lagerscan.rule=Host(`angular.umut-aslan.dev`)
+      - traefik.http.routers.lagerscan.entrypoints=websecure
+      - traefik.http.routers.lagerscan.tls.certresolver=myresolver
+      - traefik.http.services.lagerscan.loadbalancer.server.port=8080
+
+volumes:
+  db:
+
+networks:
+  internal:
+    internal: true
+  proxy:
+    external: true
