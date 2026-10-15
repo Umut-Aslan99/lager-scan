@@ -5,9 +5,9 @@
     <p class="alert alert-error" role="alert">Der Verbindungscode ist abgelaufen. Bitte den QR-Code am Leitstand neu scannen.</p>
   }
 
-  <app-camera-scanner (scanned)="lookup($event)" />
+  <app-camera-scanner (scanned)="lookup($event)" data-tour="camera" />
 
-  <form class="manual" (submit)="$event.preventDefault(); lookup(code())">
+  <form class="manual" (submit)="$event.preventDefault(); lookup(code())" data-tour="manual">
     <input class="input" [value]="code()" (input)="code.set(val($event))" placeholder="Code eingeben oder Handscanner nutzen"
       aria-label="Code eingeben" autocomplete="off" autocapitalize="characters" data-testid="code-input" />
     <button class="btn btn-primary" type="submit" [disabled]="busy()">Suchen</button>
@@ -138,7 +138,7 @@
       }
     }
   } @else {
-    <p class="muted" style="text-align:center">Scannen Sie ein Artikel- oder Lagerplatz-Etikett.
+    <p class="muted" style="text-align:center" data-tour="hint">Scannen Sie ein Artikel- oder Lagerplatz-Etikett.
       Etiketten zum Ausprobieren gibt es unter <a routerLink="/etiketten">Etiketten</a> – oder am Bildschirm des Leitstands.</p>
   }
 </div>

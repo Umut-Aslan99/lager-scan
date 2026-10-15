@@ -17,7 +17,7 @@ interface Label { id: string; title: string; sub: string; img: string; testId: s
       <button class="btn btn-primary no-print" type="button" (click)="print()">Drucken</button>
     </div>
     <h2 class="section">Lagerplätze</h2>
-    <div class="labels">
+    <div class="labels" data-tour="labels">
       @for (l of bins(); track l.id) {
         <figure class="label-card" [attr.data-testid]="l.testId"><img [src]="l.img" [alt]="'QR ' + l.title" /><strong>{{ l.title }}</strong><span>{{ l.sub }}</span></figure>
       }

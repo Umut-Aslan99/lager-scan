@@ -11,6 +11,7 @@ export default defineConfig({
   use: { baseURL: process.env.BASE_URL ?? 'http://localhost:8080', trace: 'retain-on-failure', locale: 'de-DE', timezoneId: 'Europe/Berlin' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: /camera\.spec/ },
+    { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /tour\.spec/ },
     {
       // Chromium's fake camera plays a generated video of a QR bin label (see global-setup.ts).
       name: 'camera',

@@ -6,11 +6,11 @@
     </span>
     <nav class="nav" aria-label="Bereiche">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Leitstand</a>
-      <a routerLink="/scan" routerLinkActive="active">Scanner</a>
+      <a routerLink="/scan" routerLinkActive="active" data-tour="scanner-link">Scanner</a>
       <a routerLink="/etiketten" routerLinkActive="active">Etiketten</a>
     </nav>
     <div class="tools">
-      <span class="netpill" [class.off]="!outbox.online()" data-testid="netpill" [attr.data-pending]="outbox.pending()">
+      <span class="netpill" [class.off]="!outbox.online()" data-testid="netpill" data-tour="netpill" [attr.data-pending]="outbox.pending()">
         {{ outbox.online() ? 'Online' : 'Offline' }}@if (outbox.pending()) { · {{ outbox.pending() }} wartend }
       </span>
       <button class="tool" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Helles Design' : 'Dunkles Design'">{{ theme() === 'dark' ? '☀' : '☾' }}</button>
